@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+poetry.lock
+
+# macOS
+.DS_Store
+
+# Project Genesis Specific
+memory_db/
+chroma_db/
+*.log
+
+# VS Code
+.vscode/

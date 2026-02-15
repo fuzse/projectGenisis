@@ -1,0 +1,14 @@
+FROM /Users/jasonheupel/Downloads/meta-llama-3.1-8b-instruct-abliterated.Q4_K_M.gguf
+
+# Optional: Set parameters to make it creative
+PARAMETER temperature 0.7
+PARAMETER top_p 0.9
+
+# Optional: Set the system message wrapper
+TEMPLATE """{{ if .System }}<|start_header_id|>system<|end_header_id|>
+
+{{ .System }}<|eot_id|>{{ end }}{{ if .User }}<|start_header_id|>user<|end_header_id|>
+
+{{ .User }}<|eot_id|>{{ end }}<|start_header_id|>assistant<|end_header_id|>
+
+{{ .Response }}<|eot_id|>"""

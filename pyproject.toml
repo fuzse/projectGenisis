@@ -1,0 +1,19 @@
+[project]
+name = "project-genesis"
+version = "0.1.0"
+description = "A cognitive architecture using Llama 3.1"
+authors = [
+    {name = "Jason Heupel"}
+]
+requires-python = "^3.11"
+dependencies = [
+    "ollama (>=0.6.1,<0.7.0)",
+    "chromadb (>=1.5.0,<2.0.0)",
+    "numpy (>=2.4.2,<3.0.0)",
+    "colorama (>=0.4.6,<0.5.0)"
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
