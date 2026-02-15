@@ -1,4 +1,4 @@
-# projectGenisis
+# Project Genisis
 
 ## Mission
 To build a cognitive architecture using a LLM that mimics human thought processes rather than standard AI request/response patterns.
