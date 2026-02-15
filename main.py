@@ -3,6 +3,9 @@ from colorama import Fore, Style, init
 import config
 from memory.episodic import EpisodicMemory
 from memory.sleep import go_to_sleep
+from core.wakeup import run_wakeup_routine
+from core.perception import check_intent
+from core.tools import search_web
 
 # Initialize colors
 init(autoreset=True)
@@ -14,12 +17,17 @@ def main():
     brain = EpisodicMemory()
     print(Fore.GREEN + f"✔ Hippocampus Linked ({brain.count()} memories)")
 
-    print(Fore.YELLOW + "System Online. (Type 'exit' to quit)")
+    # --- WAKE UP ROUTINE ---
+    greeting = run_wakeup_routine()
+    print(Fore.GREEN + f"\n{config.AI_NAME}: {greeting}")
     
-    # Context buffer (Short-term memory)
-    # We keep the last 5 turns so it can hold a conversation
-    chat_history = [] 
+    # Initialize history with the greeting so the AI knows it spoke first
+    chat_history = [
+        {'role': 'assistant', 'content': greeting}
+    ]
 
+    print(Fore.YELLOW + "\nSystem Online. (Type 'exit' to quit)")
+    
     while True:
         user_input = input(Fore.WHITE + f"\n{config.USER_NAME}: ")
         
@@ -29,37 +37,51 @@ def main():
             print(Fore.CYAN + "Shutting down...")
             break
             
-        # --- THE COGNITIVE STEP ---
+        # --- 1. PERCEPTION LAYER (The Router) ---
+        # "Does this input require a tool?"
+        intent = check_intent(user_input)
+        tool_result = ""
         
-        # 1. Recall: "Have I heard about this before?"
-        # We search for memories related to the user's input
+        if "SEARCH:" in intent:
+            print(Style.DIM + f"  → Intent Detected: {intent}")
+            # Extract the query
+            query = intent.replace("SEARCH:", "").strip()
+            # Run the tool
+            tool_result = search_web(query)
+            print(Fore.CYAN + f"  → Search Results Acquired.")
+        
+        # --- 2. MEMORY RECALL ---
+        # "Have I heard about this before?"
         memories = brain.recall(user_input, n_results=2)
         
-        # Format memories into a string for the prompt
+        # Format memories into a string
         memory_context = ""
         if memories:
-            memory_context = "RELEVANT MEMORIES:\n"
+            memory_context = "LONG TERM MEMORY:\n"
             for m in memories:
                 memory_context += f"- {m['text']}\n"
         
-        # 2. Construct the Prompt
+        # --- 3. CONSTRUCT PROMPT ---
+        # We combine Identity + Memory + Web Results + User Input
         system_prompt = f"""
         <|begin_of_text|><|start_header_id|>system<|end_header_id|>
         You are {config.AI_NAME}. You are chatting with {config.USER_NAME}.
         
-        CORE MEMORY (What you know about the user):
+        CONTEXT FROM MEMORY:
         {memory_context if memory_context else "No relevant memories found."}
         
-        PERSONALITY RULES:
-        1. Speak casually and briefly (1-2 sentences max).
-        2. Do NOT act like a customer service agent.
-        3. Do NOT ask "How can I help you?".
-        4. If the user makes a statement (e.g., "I bought a jersey"), REACT to it. Do not ignore it.
-        5. IGNORE previous conversation failures. Focus on the NOW.
+        WEB SEARCH RESULTS:
+        {tool_result if tool_result else "No search performed."}
+        
+        INSTRUCTIONS:
+        - If Web Search Results are present, use them to answer the user's question directly.
+        - Do NOT say "As an AI" or "I cannot access real-time data." You HAVE the data now.
+        - Prioritize the USER'S LAST MESSAGE.
+        - Be casual, concise, and friendly.
         <|eot_id|>
         """
         
-        # 3. Generate Response
+        # --- 4. GENERATE RESPONSE ---
         print(Fore.GREEN + f"{config.AI_NAME}: ", end="", flush=True)
         
         full_response = ""
@@ -81,14 +103,6 @@ def main():
             full_response += content
             
         print() 
-        
-        # 4. Consolidate (Save the interaction)
-        # In a real brain, we'd sleep on this. For now, we save raw text.
-        # We save "User said X, I replied Y" as one memory unit.
-        #brain.add_memory(
-        #    text=f"User: {user_input} | AI: {full_response}",
-        #    metadata={"type": "conversation", "speaker": config.USER_NAME}
-        #)
         
         # Update short-term chat history
         chat_history.append({'role': 'user', 'content': user_input})
